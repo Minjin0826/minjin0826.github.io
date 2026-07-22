@@ -1,0 +1,237 @@
+@import "tailwindcss";
+
+/* Tailwind v4 사용자 정의 테마 확장 */
+@theme {
+  --color-accent: #8a84e2;
+  --color-accent-light: #f0eefc;
+  --color-accent-hover: #726bcf;
+  
+  --color-brand-primary: #2d3142;
+  --color-brand-secondary: #5d6275;
+  --color-brand-muted: #9095a6;
+
+  --animate-fade-in-up: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 글로벌 CSS 변수 (라이트 모드 기본값) */
+:root {
+  --bg-app: #f5f6fa;
+  --bg-card: #ffffff;
+  --bg-sidebar: #ffffff;
+  --border-color: #e6e8f2;
+  
+  --text-primary: #2d3142;
+  --text-secondary: #5d6275;
+  --text-muted: #9095a6;
+  
+  --accent: #8a84e2;
+  --accent-light: #f0eefc;
+  --accent-hover: #726bcf;
+  --accent-rgb: 138, 132, 226;
+  
+  --glow-1: rgba(138, 132, 226, 0.08);
+  --glow-2: rgba(114, 107, 207, 0.04);
+  
+  --shadow-sm: 0 4px 12px rgba(138, 132, 226, 0.02);
+  --shadow-md: 0 12px 32px rgba(138, 132, 226, 0.05);
+  --shadow-lg: 0 24px 64px rgba(138, 132, 226, 0.1);
+
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+}
+
+/* 다크 모드 변수 */
+body.dark-mode {
+  --bg-app: #0e0e11;
+  --bg-card: #16161c;
+  --bg-sidebar: #16161c;
+  --border-color: #262733;
+  
+  --text-primary: #e6e8f2;
+  --text-secondary: #a0a4b8;
+  --text-muted: #6f7285;
+  
+  --accent: #a39ef5;
+  --accent-light: #201e38;
+  --accent-hover: #bab6ff;
+  --accent-rgb: 163, 158, 245;
+  
+  --glow-1: rgba(163, 158, 245, 0.15);
+  --glow-2: rgba(138, 132, 226, 0.06);
+  
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.5);
+}
+
+/* 기본 바디 세팅 */
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  min-height: 100vh;
+  transition: background-color 0.4s ease, color 0.4s ease;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* 스크롤바 디자인 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-app);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: var(--radius-sm);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* 블러 구체 배경 이펙트 */
+.bg-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.8;
+  transition: all 0.4s ease;
+}
+
+/* 3D 플립 카드 지원 스타일 */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* --------------------------------------------------
+ * PDF 인쇄 전용 스타일 (Print Stylesheet)
+ * -------------------------------------------------- */
+@media print {
+  /* 인쇄 시 네비게이션 및 불필요한 스위치 제거 */
+  .sidebar, .bg-glow, .theme-toggle-btn, .pdf-export-btn, .filter-container, .modal, .modal-overlay, .flip-icon {
+    display: none !important;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+  }
+
+  .app-container {
+    display: block !important;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* 인쇄 시 모든 탭 섹션을 책자 형태로 병렬 나열 */
+  .tab-content {
+    display: block !important;
+    opacity: 1 !important;
+    transform: none !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    margin-bottom: 40px !important;
+  }
+
+  /* 카드 인쇄 스타일 */
+  .card {
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    transform: none !important;
+    page-break-inside: avoid !important;
+  }
+
+  .lang-badge {
+    background-color: #f0f0f0 !important;
+    border: 1px solid #ccc !important;
+  }
+
+  /* 테이블 인쇄 스타일 */
+  .academic-table th {
+    background-color: #e0e0e0 !important;
+    color: #000000 !important;
+    border-bottom: 2px solid #000 !important;
+  }
+
+  .academic-table td {
+    border-bottom: 1px solid #ccc !important;
+  }
+
+  /* 플립 카드 인쇄 스타일 (평면 나열) */
+  .flip-card {
+    height: auto !important;
+    perspective: none !important;
+    page-break-inside: avoid !important;
+  }
+
+  .flip-card-inner {
+    transform: none !important;
+    height: auto !important;
+  }
+
+  .flip-card-front, .flip-card-back {
+    position: relative !important;
+    transform: none !important;
+    height: auto !important;
+    display: block !important;
+    border: 1px solid #999 !important;
+    margin-bottom: 10px !important;
+    background: #ffffff !important;
+  }
+
+  .flip-card-back {
+    background-color: #f7f7f7 !important;
+  }
+
+  .chart-container {
+    height: 300px !important;
+    page-break-inside: avoid !important;
+  }
+
+  .section-title {
+    color: #000000 !important;
+    font-size: 24pt !important;
+    border-bottom: 2px solid #000 !important;
+    padding-bottom: 8px !important;
+  }
+
+  .subsection-title {
+    color: #000000 !important;
+    font-size: 16pt !important;
+    border-left: 6px solid #000 !important;
+  }
+}
