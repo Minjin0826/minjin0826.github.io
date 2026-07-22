@@ -19,84 +19,45 @@ import {
   LineChart, 
   Globe, 
   Calendar, 
-  ChevronRight 
+  ChevronRight,
+  Edit3
 } from "lucide-react";
 
 import GradeCharts from "./components/GradeCharts";
 import InterviewCards from "./components/InterviewCards";
 import ResearchModal from "./components/ResearchModal";
+import PortfolioEditorModal from "./components/PortfolioEditorModal";
+import { PortfolioData, ResearchReport } from "./types/portfolio";
+import { defaultPortfolioData } from "./data/defaultPortfolio";
 
-// 탐구 보고서 타입 정의
-interface Research {
-  title: string;
-  subject: string;
-  date: string;
-  abstract: string;
-  tag: string;
-  preview: string;
-}
-
-// 독서 카드 타입 정의
-interface BookLog {
-  category: "humanity" | "society" | "literature";
-  categoryKo: string;
-  title: string;
-  author: string;
-  review: string;
-}
-
-const researchData: Research[] = [
-  {
-    title: "인공지능(AI) 시대의 정보 격차와 정보 민주주의의 위기",
-    subject: "사회·국제 관계 탐구",
-    date: "2026년 5월",
-    tag: "사회과학",
-    preview: "인공지능의 확산이 가져올 계층별 정보 비대칭 양상을 규명하고, 정보 균등화 방안을 제안한 연구 보고서입니다.",
-    abstract: "본 탐구는 인공지능 기술의 급격한 발달이 사회 계층별 정보 비대칭을 어떻게 심화시키는지 사회학적 관점에서 분석하였습니다. 디지털 기기 및 AI 리터러시 수준에 따른 격차를 문헌 조사와 통계 자료 분석으로 진단하고, 정보 민주주의를 지키기 위한 공공 교육 체계 개편과 알고리즘 투명성 강화 대책을 제안하였습니다. 이를 통해 국제적인 디지털 평등 실현의 방안을 고찰했습니다."
-  },
-  {
-    title: "스페인어와 한국어의 존칭 체계 비교와 문화적 배경 연구",
-    subject: "언어 및 인류학 탐구",
-    date: "2025년 11월",
-    tag: "어학 / 인류학",
-    preview: "스페인어와 한국어의 대명사 및 서술어 경어법을 비교 연구하여, 두 언어권 사회가 지닌 대인관계 가치관을 비교 사회언어학적으로 규명했습니다.",
-    abstract: "서로 다른 어족에 속한 스페인어(Tú/Usted)와 한국어의 복잡한 높임법 체계를 비교함으로써 언어가 반영하는 수직적·수평적 인간관계의 문화적 차이를 고찰했습니다. 한국어의 나이와 서열 중심 어휘 체계와 달리, 스페인어는 친밀도(Solidarity)와 격식(Power)에 따라 호칭이 분류되는 현상을 사회언어학적 관점으로 규명하였습니다."
-  }
-];
-
-const booksData: BookLog[] = [
-  {
-    category: "humanity",
-    categoryKo: "인문학 / 철학",
-    title: "정의란 무엇인가",
-    author: "마이클 샌델 저",
-    review: "자유지상주의, 공리주의, 공동체주의 등 고전적 정의론을 현대의 구체적 딜레마와 결합하여 고찰한 책입니다. 저는 공리주의가 지닌 다수결의 맹점을 깨닫고, 소수자의 인권을 보장하는 롤스의 '차등 원칙'이 현대 복지 국가에서 왜 중요한지 탐색하는 계기가 되었습니다."
-  },
-  {
-    category: "society",
-    categoryKo: "사회과학 / 역사",
-    title: "사피엔스",
-    author: "유발 하라리 저",
-    review: "인류의 인지혁명, 농업혁명, 과학혁명을 거쳐 현대 문명이 형성된 궤적을 짚어봅니다. 특히 '상상 속의 질서'(돈, 법률, 제국 등)가 인간 사회를 지배하는 방식을 분석하며, 국제 사회가 형성한 국제법과 규범 역시 인류가 인위적으로 만든 합의이며, 이를 개선함으로써 세계의 갈등을 평화적으로 해결할 수 있을 것이라는 영감을 얻었습니다."
-  },
-  {
-    category: "literature",
-    categoryKo: "문학 / 문화",
-    title: "돈키호테",
-    author: "미겔 데 세르반테스 저",
-    review: "스페인어를 공부하며 원작의 뉘앙스를 온전히 맛보고자 찾아 읽은 세계 문학 고전입니다. 남들의 비웃음 속에서도 자신의 이상(기사도)을 끝까지 쫓아 헌신하는 돈키호테의 모습을 보며, 현실적인 어려움과 입시의 파도 속에서도 타협하지 않고 인문사회학자라는 지적인 비전을 실현하겠다는 용기를 배웠습니다."
-  }
-];
+const LOCAL_STORAGE_KEY = "user_portfolio_data_v1";
 
 export default function PortfolioPage() {
   const [activeTab, setActiveTab] = useState<string>("home");
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
-  const [selectedResearch, setSelectedResearch] = useState<Research | null>(null);
+  const [selectedResearch, setSelectedResearch] = useState<ResearchReport | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isEditorOpen, setIsEditorOpen] = useState<boolean>(false);
   const [bookFilter, setBookFilter] = useState<string>("all");
 
-  // 1. 다크 모드 초기 세팅
+  // 전체 포트폴리오 동적 데이터 상태
+  const [portfolioData, setPortfolioData] = useState<PortfolioData>(defaultPortfolioData);
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+
+  // 1. 마운트 시 localStorage 데이터 복원
   useEffect(() => {
+    setIsMounted(true);
+    const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        setPortfolioData(parsed);
+      } catch {
+        setPortfolioData(defaultPortfolioData);
+      }
+    }
+
+    // 테마 설정
     const savedTheme = localStorage.getItem("theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
@@ -105,7 +66,22 @@ export default function PortfolioPage() {
     }
   }, []);
 
-  // 2. 다크 모드 토글
+  // 2. 포트폴리오 저장 핸들러
+  const handleSavePortfolio = (newData: PortfolioData) => {
+    setPortfolioData(newData);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newData));
+  };
+
+  // 3. 포트폴리오 리셋 핸들러
+  const handleResetPortfolio = () => {
+    if (confirm("정말 기본 샘플 데이터로 복원하시겠습니까? 입력하신 내용이 초기화됩니다.")) {
+      setPortfolioData(defaultPortfolioData);
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+      setIsEditorOpen(false);
+    }
+  };
+
+  // 4. 다크 모드 토글
   const toggleTheme = () => {
     if (isDarkMode) {
       document.body.classList.remove("dark-mode");
@@ -118,13 +94,13 @@ export default function PortfolioPage() {
     }
   };
 
-  // 3. PDF 출력
+  // 5. PDF 출력
   const handlePrint = () => {
     window.print();
   };
 
-  // 4. 모달 열기/닫기
-  const openModal = (research: Research) => {
+  // 6. 연구 보고서 모달
+  const openModal = (research: ResearchReport) => {
     setSelectedResearch(research);
     setIsModalOpen(true);
   };
@@ -134,10 +110,14 @@ export default function PortfolioPage() {
     setSelectedResearch(null);
   };
 
-  // 5. 독서 데이터 필터링
+  if (!isMounted) return null;
+
+  const { profile, academicGrades, languageActivities, competencyRadar, researchReports, coActivities, bookLogs, roadmapSteps, interviewQnAs } = portfolioData;
+
+  // 독서 데이터 필터링
   const filteredBooks = bookFilter === "all" 
-    ? booksData 
-    : booksData.filter(book => book.category === bookFilter);
+    ? bookLogs 
+    : bookLogs.filter(book => book.category === bookFilter);
 
   return (
     <>
@@ -150,15 +130,23 @@ export default function PortfolioPage() {
         {/* 사이드바 영역 */}
         <aside className="sidebar w-[280px] bg-[var(--bg-sidebar)] border-r border-[var(--border-color)] p-10 flex flex-col fixed h-screen z-10 transition-all duration-400 max-[992px]:w-full max-[992px]:h-auto max-[992px]:relative max-[992px]:border-r-0 max-[992px]:border-b max-[992px]:p-6 print:hidden">
           
-          <div className="sidebar-header flex flex-col items-center text-center mb-10 max-[992px]:flex-row max-[992px]:gap-4 max-[992px]:mb-6 max-[992px]:text-left">
+          <div className="sidebar-header flex flex-col items-center text-center mb-6 max-[992px]:flex-row max-[992px]:gap-4 max-[992px]:mb-4 max-[992px]:text-left">
             <div className="profile-avatar w-20 h-20 rounded-[16px] bg-[var(--accent-light)] flex items-center justify-center mb-4 shadow-[var(--shadow-sm)] max-[992px]:mb-0 max-[992px]:w-[60px] max-[992px]:h-[60px]">
               <GraduationCap size={40} className="text-[var(--accent)] max-[992px]:w-[30px] max-[992px]:h-[30px]" />
             </div>
             <div className="profile-info">
-              <h2 className="font-serif font-bold text-[1.35rem] text-[var(--text-primary)] mb-1.5">홍길동</h2>
-              <p className="text-[0.85rem] text-[var(--text-muted)] font-medium">외국어고등학교 국제계열 지망</p>
+              <h2 className="font-serif font-bold text-[1.35rem] text-[var(--text-primary)] mb-1.5">{profile.name}</h2>
+              <p className="text-[0.85rem] text-[var(--text-muted)] font-medium">{profile.targetSchool}</p>
             </div>
           </div>
+
+          {/* 내 정보 직접 수정 버튼 */}
+          <button
+            onClick={() => setIsEditorOpen(true)}
+            className="w-full mb-6 py-2.5 px-3 rounded-[12px] bg-[var(--accent-light)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 border border-[rgba(var(--accent-rgb),0.3)] transition-all shadow-sm"
+          >
+            <Edit3 size={16} /> ✏️ 내 포트폴리오 수정하기
+          </button>
 
           <nav className="sidebar-nav flex flex-col gap-2 flex-1 max-[992px]:flex-row max-[992px]:overflow-x-auto max-[992px]:pb-2 max-[992px]:gap-1.5 max-[992px]:flex-none">
             <button 
@@ -231,19 +219,27 @@ export default function PortfolioPage() {
           
           {/* 1. 홈 / 자기소개 탭 */}
           <section id="home" className={`tab-content ${activeTab === "home" ? "active block" : "hidden"} print:block print:mb-10 print:break-after-page`}>
-            <header className="section-header mb-12">
-              <span className="section-tag inline-block text-[0.8rem] font-bold uppercase tracking-wider text-[var(--accent)] mb-2">About Me</span>
-              <h1 className="section-title font-serif text-[2.2rem] font-bold text-[var(--text-primary)] leading-[1.3] print:text-[24pt] print:border-b-2 print:border-black print:pb-2">글로벌 리더를 향한 시작</h1>
+            <header className="section-header mb-12 flex justify-between items-start">
+              <div>
+                <span className="section-tag inline-block text-[0.8rem] font-bold uppercase tracking-wider text-[var(--accent)] mb-2">About Me</span>
+                <h1 className="section-title font-serif text-[2.2rem] font-bold text-[var(--text-primary)] leading-[1.3] print:text-[24pt] print:border-b-2 print:border-black print:pb-2">글로벌 리더를 향한 시작</h1>
+              </div>
+              <button
+                onClick={() => setIsEditorOpen(true)}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-[10px] bg-[var(--accent-light)] text-[var(--accent)] border border-[rgba(var(--accent-rgb),0.3)] hover:bg-[var(--accent)] hover:text-white transition-all print:hidden"
+              >
+                <Edit3 size={14} /> 정보 수정
+              </button>
             </header>
 
             <div className="intro-grid grid grid-cols-[1.6fr_1fr] gap-6 mb-6 max-[992px]:grid-cols-1 print:block">
               {/* 비전 카드 */}
               <div className="card bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[16px] p-8 shadow-[var(--shadow-sm)] hover:translate-y-[-4px] hover:shadow-[var(--shadow-md)] hover:border-[rgba(var(--accent-rgb),0.3)] transition-all duration-400 flex flex-col justify-center bg-linear-to-br bg-gradient-to-br from-[var(--bg-card)] to-[var(--accent-light)] print:border-[#999] print:shadow-none print:bg-white print:mb-4">
                 <h2 className="font-serif text-[1.6rem] font-semibold text-[var(--text-primary)] leading-[1.45] mb-5 print:text-[16pt]">
-                  &quot;언어로 문화의 장벽을 허물고, 사회과학적 렌즈로 세상을 탐구합니다.&quot;
+                  {profile.visionQuote}
                 </h2>
                 <p className="text-[1rem] text-[var(--text-secondary)] leading-[1.7]">
-                  저는 영어와 다양한 제2외국어 지식을 기반으로 세계 곳곳의 사회·정치적 이슈를 조사하고, 이를 토론과 글쓰기로 풀어내는 탐구 활동을 지속해 왔습니다. 단순한 어학 학습을 넘어 언어의 문화적 배경을 성찰하고, 국제 사회의 지속 가능한 발전에 이바지하는 인문사회 연구원이 되고자 합니다.
+                  {profile.visionDescription}
                 </p>
               </div>
 
@@ -253,9 +249,15 @@ export default function PortfolioPage() {
                   <User className="text-[var(--accent)]" size={22} /> 기본 인적 정보
                 </h3>
                 <ul className="profile-list list-none flex flex-col gap-4">
-                  <li className="text-[0.95rem] text-[var(--text-secondary)] border-b border-[var(--border-color)] pb-3 print:pb-2"><strong className="text-[var(--text-primary)] font-semibold inline-block w-[100px]">소속:</strong> 한국중학교 3학년</li>
-                  <li className="text-[0.95rem] text-[var(--text-secondary)] border-b border-[var(--border-color)] pb-3 print:pb-2"><strong className="text-[var(--text-primary)] font-semibold inline-block w-[100px]">관심 분야:</strong> 국제정치학, 사회학, 비교문화학</li>
-                  <li className="text-[0.95rem] text-[var(--text-secondary)]"><strong className="text-[var(--text-primary)] font-semibold inline-block w-[100px]">외국어 역량:</strong> 영어(Fluent), 스페인어(Basic)</li>
+                  <li className="text-[0.95rem] text-[var(--text-secondary)] border-b border-[var(--border-color)] pb-3 print:pb-2">
+                    <strong className="text-[var(--text-primary)] font-semibold inline-block w-[100px]">소속:</strong> {profile.currentSchool} {profile.grade}
+                  </li>
+                  <li className="text-[0.95rem] text-[var(--text-secondary)] border-b border-[var(--border-color)] pb-3 print:pb-2">
+                    <strong className="text-[var(--text-primary)] font-semibold inline-block w-[100px]">관심 분야:</strong> {profile.interests}
+                  </li>
+                  <li className="text-[0.95rem] text-[var(--text-secondary)]">
+                    <strong className="text-[var(--text-primary)] font-semibold inline-block w-[100px]">외국어 역량:</strong> 영어({profile.englishLevel}), 스페인어({profile.spanishLevel})
+                  </li>
                 </ul>
               </div>
             </div>
@@ -311,27 +313,15 @@ export default function PortfolioPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      <tr className="hover:bg-[rgba(var(--accent-rgb),0.02)]">
-                        <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">2학년 1학기</td>
-                        <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">A</td>
-                        <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">A</td>
-                        <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">A</td>
-                        <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">전 과목 우수</td>
-                      </tr>
-                      <tr className="hover:bg-[rgba(var(--accent-rgb),0.02)]">
-                        <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">2학년 2학기</td>
-                        <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">A</td>
-                        <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">A</td>
-                        <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">A</td>
-                        <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">국어·영어 전교 최상위권 유지</td>
-                      </tr>
-                      <tr className="hover:bg-[rgba(var(--accent-rgb),0.02)]">
-                        <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">3학년 1학기</td>
-                        <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">A</td>
-                        <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">A</td>
-                        <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">A</td>
-                        <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">학술 탐구 연계 발표 우수</td>
-                      </tr>
+                      {academicGrades.map((g, i) => (
+                        <tr key={i} className="hover:bg-[rgba(var(--accent-rgb),0.02)]">
+                          <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">{g.term}</td>
+                          <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">{g.english}</td>
+                          <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">{g.korean}</td>
+                          <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">{g.social}</td>
+                          <td className="p-4 border-b border-[var(--border-color)] text-[0.95rem] text-[var(--text-primary)] print:border-b-[#ccc]">{g.achievement}</td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -346,23 +336,19 @@ export default function PortfolioPage() {
                 <div className="language-badges flex flex-wrap gap-3 mb-6">
                   <div className="lang-badge flex-1 min-w-[120px] p-4 bg-[var(--accent-light)] rounded-[8px] flex flex-col items-center text-center border border-[rgba(var(--accent-rgb),0.1)] print:bg-[#f0f0f0] print:border-[#ccc]">
                     <span className="text-[0.8rem] uppercase text-[var(--text-muted)] font-semibold mb-1">English</span>
-                    <span className="text-[1.05rem] text-[var(--accent)] font-bold">Advanced (C1)</span>
+                    <span className="text-[1.05rem] text-[var(--accent)] font-bold">{profile.englishLevel}</span>
                   </div>
                   <div className="lang-badge flex-1 min-w-[120px] p-4 bg-[var(--accent-light)] rounded-[8px] flex flex-col items-center text-center border border-[rgba(var(--accent-rgb),0.1)] print:bg-[#f0f0f0] print:border-[#ccc]">
-                    <span className="text-[0.8rem] uppercase text-[var(--text-muted)] font-semibold mb-1">Spanish</span>
-                    <span className="text-[1.05rem] text-[var(--accent)] font-bold">DELE A1</span>
+                    <span className="text-[0.8rem] uppercase text-[var(--text-muted)] font-semibold mb-1">2nd Foreign</span>
+                    <span className="text-[1.05rem] text-[var(--accent)] font-bold">{profile.spanishLevel}</span>
                   </div>
                 </div>
                 <ul className="activity-bullets list-none flex flex-col gap-3">
-                  <li className="text-[0.9rem] text-[var(--text-secondary)] leading-[1.5] relative pl-5 before:content-[''] before:absolute before:left-1.5 before:top-2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-[var(--accent)]">
-                    교내 영작문 대회 최우수상 수상 (3학년 1학기)
-                  </li>
-                  <li className="text-[0.9rem] text-[var(--text-secondary)] leading-[1.5] relative pl-5 before:content-[''] before:absolute before:left-1.5 before:top-2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-[var(--accent)]">
-                    교내 영어 토론 동아리 정기 디베이트 참여 (2~3학년)
-                  </li>
-                  <li className="text-[0.9rem] text-[var(--text-secondary)] leading-[1.5] relative pl-5 before:content-[''] before:absolute before:left-1.5 before:top-2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-[var(--accent)]">
-                    지역 복지관 아동 대상 영어 멘토링 봉사 80시간 달성
-                  </li>
+                  {languageActivities.map(act => (
+                    <li key={act.id} className="text-[0.9rem] text-[var(--text-secondary)] leading-[1.5] relative pl-5 before:content-[''] before:absolute before:left-1.5 before:top-2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-[var(--accent)]">
+                      {act.text}
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>
@@ -370,7 +356,11 @@ export default function PortfolioPage() {
             <h3 className="subsection-title font-serif text-[1.4rem] font-semibold text-[var(--text-primary)] my-12 border-l-4 border-[var(--accent)] pl-3 print:text-[16pt] print:border-l-6 print:border-black">학업 성취 시각화</h3>
             {/* 차트 컴포넌트 */}
             <div className="print:block">
-              <GradeCharts isDarkMode={isDarkMode} />
+              <GradeCharts 
+                isDarkMode={isDarkMode} 
+                academicGrades={academicGrades}
+                competencyRadar={competencyRadar}
+              />
             </div>
           </section>
 
@@ -385,9 +375,9 @@ export default function PortfolioPage() {
             </header>
 
             <div className="card-grid grid grid-cols-2 gap-6 mb-10 max-[640px]:grid-cols-1 print:grid-cols-1">
-              {researchData.map((research, idx) => (
+              {researchReports.map((research) => (
                 <div 
-                  key={idx}
+                  key={research.id}
                   className="card research-card bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[16px] p-8 shadow-[var(--shadow-sm)] hover:translate-y-[-4px] hover:shadow-[var(--shadow-md)] hover:border-[rgba(var(--accent-rgb),0.3)] transition-all duration-400 cursor-pointer flex flex-col h-full print:border-[#999] print:shadow-none print:bg-white print:mb-4"
                   onClick={() => openModal(research)}
                 >
@@ -421,46 +411,19 @@ export default function PortfolioPage() {
             </header>
 
             <div className="timeline relative max-w-[800px] mx-auto pl-8 before:content-[''] before:absolute before:left-2 before:top-2.5 before:bottom-2.5 before:w-[2px] before:bg-[var(--border-color)] print:before:bg-[#ccc]">
-              
-              {/* 활동 1 */}
-              <div className="timeline-item relative mb-10 last:mb-0">
-                <div className="timeline-dot absolute left-[-32px] top-2.5 w-[18px] h-[18px] rounded-full bg-[var(--bg-app)] border-4 border-[var(--accent)] z-2 hover:bg-[var(--accent)] hover:shadow-[0_0_0_6px_var(--accent-light)] transition-all duration-400 print:border-[#999] print:bg-white" />
-                <div className="timeline-date text-[0.85rem] font-semibold text-[var(--accent)] mb-2">{`3학년 1학기 - 현재`}</div>
-                <div className="timeline-content card bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[16px] p-8 shadow-[var(--shadow-sm)] print:border-[#999] print:shadow-none print:bg-white">
-                  <span className="activity-type text-[0.75rem] font-semibold text-[var(--text-muted)] uppercase mb-2 block">동아리 활동</span>
-                  <h3 className="activity-title font-serif text-[1.2rem] font-semibold text-[var(--text-primary)] mb-3 print:text-[13pt]">영자 신문반 (The Herald) 부장</h3>
-                  <p className="activity-desc text-[0.92rem] text-[var(--text-secondary)] leading-[1.65]">
-                    매월 한 편의 영어 사설(Editorial)을 기획하고 부원들의 기사를 피드백했습니다. &apos;글로벌 난민 문제와 지속가능발전목표(SDGs)&apos;를 주제로 한 특집 기사를 총괄 기획하였으며, 부원 간 번역 이견 조율을 주도하여 리더십과 어학 협동 역량을 배웠습니다.
-                  </p>
+              {coActivities.map((act) => (
+                <div key={act.id} className="timeline-item relative mb-10 last:mb-0">
+                  <div className="timeline-dot absolute left-[-32px] top-2.5 w-[18px] h-[18px] rounded-full bg-[var(--bg-app)] border-4 border-[var(--accent)] z-2 hover:bg-[var(--accent)] hover:shadow-[0_0_0_6px_var(--accent-light)] transition-all duration-400 print:border-[#999] print:bg-white" />
+                  <div className="timeline-date text-[0.85rem] font-semibold text-[var(--accent)] mb-2">{act.date}</div>
+                  <div className="timeline-content card bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[16px] p-8 shadow-[var(--shadow-sm)] print:border-[#999] print:shadow-none print:bg-white">
+                    <span className="activity-type text-[0.75rem] font-semibold text-[var(--text-muted)] uppercase mb-2 block">{act.type}</span>
+                    <h3 className="activity-title font-serif text-[1.2rem] font-semibold text-[var(--text-primary)] mb-3 print:text-[13pt]">{act.title}</h3>
+                    <p className="activity-desc text-[0.92rem] text-[var(--text-secondary)] leading-[1.65]">
+                      {act.description}
+                    </p>
+                  </div>
                 </div>
-              </div>
-
-              {/* 활동 2 */}
-              <div className="timeline-item relative mb-10 last:mb-0">
-                <div className="timeline-dot absolute left-[-32px] top-2.5 w-[18px] h-[18px] rounded-full bg-[var(--bg-app)] border-4 border-[var(--accent)] z-2 hover:bg-[var(--accent)] hover:shadow-[0_0_0_6px_var(--accent-light)] transition-all duration-400 print:border-[#999] print:bg-white" />
-                <div className="timeline-date text-[0.85rem] font-semibold text-[var(--accent)] mb-2">2학년 전학기</div>
-                <div className="timeline-content card bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[16px] p-8 shadow-[var(--shadow-sm)] print:border-[#999] print:shadow-none print:bg-white">
-                  <span className="activity-type text-[0.75rem] font-semibold text-[var(--text-muted)] uppercase mb-2 block">학생회 활동</span>
-                  <h3 className="activity-title font-serif text-[1.2rem] font-semibold text-[var(--text-primary)] mb-3 print:text-[13pt]">기획조정부 부원</h3>
-                  <p className="activity-desc text-[0.92rem] text-[var(--text-secondary)] leading-[1.65]">
-                    교내 스마트폰 수거 규정 완화를 논의하는 원탁토론 학생 공청회를 기획하고 퍼실리테이터로 참여했습니다. 의견 충돌 상황에서 다수결보다는 합의에 기반한 대안을 제시하여 학교 생활 규정 개정에 민주적 절차의 가치를 기여했습니다.
-                  </p>
-                </div>
-              </div>
-
-              {/* 활동 3 */}
-              <div className="timeline-item relative mb-10 last:mb-0">
-                <div className="timeline-dot absolute left-[-32px] top-2.5 w-[18px] h-[18px] rounded-full bg-[var(--bg-app)] border-4 border-[var(--accent)] z-2 hover:bg-[var(--accent)] hover:shadow-[0_0_0_6px_var(--accent-light)] transition-all duration-400 print:border-[#999] print:bg-white" />
-                <div className="timeline-date text-[0.85rem] font-semibold text-[var(--accent)] mb-2">1~2학년 겨울방학</div>
-                <div className="timeline-content card bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[16px] p-8 shadow-[var(--shadow-sm)] print:border-[#999] print:shadow-none print:bg-white">
-                  <span className="activity-type text-[0.75rem] font-semibold text-[var(--text-muted)] uppercase mb-2 block">봉사 활동</span>
-                  <h3 className="activity-title font-serif text-[1.2rem] font-semibold text-[var(--text-primary)] mb-3 print:text-[13pt]">다문화가정 자녀 한글 및 멘토링 봉사</h3>
-                  <p className="activity-desc text-[0.92rem] text-[var(--text-secondary)] leading-[1.65]">
-                    주 1회 지역 센터를 방문하여 다문화 가정 초등학생들의 국어 학습과 학교 적응을 도왔습니다. 언어 장벽으로 어려움을 겪는 아동에게 그림 카드를 활용한 맞춤형 학습을 직접 기획 및 실행하여, 포용적 이타심과 소통의 자세를 함양했습니다.
-                  </p>
-                </div>
-              </div>
-
+              ))}
             </div>
           </section>
 
@@ -480,7 +443,7 @@ export default function PortfolioPage() {
                 className={`filter-btn px-5 py-2.5 border border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-secondary)] rounded-[50px] cursor-pointer text-[0.9rem] font-medium transition-all duration-200 hover:bg-[var(--accent-light)] hover:text-[var(--accent)] hover:border-[var(--accent)] ${bookFilter === "all" ? "active bg-[var(--accent)]! text-white! border-[var(--accent)]!" : ""}`}
                 onClick={() => setBookFilter("all")}
               >
-                전체보기
+                전체보기 ({bookLogs.length})
               </button>
               <button 
                 className={`filter-btn px-5 py-2.5 border border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-secondary)] rounded-[50px] cursor-pointer text-[0.9rem] font-medium transition-all duration-200 hover:bg-[var(--accent-light)] hover:text-[var(--accent)] hover:border-[var(--accent)] ${bookFilter === "humanity" ? "active bg-[var(--accent)]! text-white! border-[var(--accent)]!" : ""}`}
@@ -503,9 +466,9 @@ export default function PortfolioPage() {
             </div>
 
             <div className="reading-grid grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-6 print:grid-cols-1">
-              {filteredBooks.map((book, idx) => (
+              {filteredBooks.map((book) => (
                 <div 
-                  key={idx}
+                  key={book.id}
                   className="card reading-card bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[16px] p-8 shadow-[var(--shadow-sm)] hover:translate-y-[-4px] hover:shadow-[var(--shadow-md)] hover:border-[rgba(var(--accent-rgb),0.3)] transition-all duration-400 flex flex-col print:border-[#999] print:shadow-none print:bg-white print:mb-4"
                 >
                   <div className="reading-header border-b border-[var(--border-color)] pb-4 mb-4">
@@ -538,37 +501,26 @@ export default function PortfolioPage() {
             </header>
 
             <div className="roadmap-container grid grid-cols-4 gap-5 mb-10 max-[1200px]:grid-cols-2 max-[640px]:grid-cols-1 print:grid-cols-2 print:gap-4 print:mb-4">
-              <div className="roadmap-card card bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[16px] p-8 shadow-[var(--shadow-sm)] flex flex-col h-full print:border-[#999] print:shadow-none print:bg-white">
-                <span className="roadmap-badge self-start text-[0.75rem] font-bold px-2.5 py-1 bg-[var(--accent-light)] text-[var(--accent)] rounded-[8px] mb-5 uppercase print:border print:border-gray-300">1학년</span>
-                <h3 className="roadmap-title font-serif text-[1.1rem] font-semibold text-[var(--text-primary)] mb-3 leading-[1.4] print:text-[11pt]">어학 기초 확립 및 인문 교양 탐색</h3>
-                <p className="roadmap-text text-[0.88rem] text-[var(--text-secondary)] leading-[1.6]">
-                  고교 학점제를 활용해 영미 문학 및 세계사 심화 과목을 수강하고, 제2외국어(스페인어) 능력을 일상 회화 수준 이상으로 증진합니다. 교내 학술 동아리에 가입해 국제 이슈 관련 스터디에 주도적으로 참여합니다.
-                </p>
-              </div>
-
-              <div className="roadmap-card card bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[16px] p-8 shadow-[var(--shadow-sm)] flex flex-col h-full print:border-[#999] print:shadow-none print:bg-white">
-                <span className="roadmap-badge self-start text-[0.75rem] font-bold px-2.5 py-1 bg-[var(--accent-light)] text-[var(--accent)] rounded-[8px] mb-5 uppercase print:border print:border-gray-300">2학년</span>
-                <h3 className="roadmap-title font-serif text-[1.1rem] font-semibold text-[var(--text-primary)] mb-3 leading-[1.4] print:text-[11pt]">심화 학술 탐구 및 국제 교류 활동</h3>
-                <p className="roadmap-text text-[0.88rem] text-[var(--text-secondary)] leading-[1.6]">
-                  교내 국제 모의유엔(MUN) 회의에 대표단으로 참여해 기후 변화와 지속가능한 성장에 관한 결의안 초안 수립에 참여해 봅니다. 인문사회 융합 연구 프로젝트를 설계해 장기 탐구 보고서를 완성합니다.
-                </p>
-              </div>
-
-              <div className="roadmap-card card bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[16px] p-8 shadow-[var(--shadow-sm)] flex flex-col h-full print:border-[#999] print:shadow-none print:bg-white">
-                <span className="roadmap-badge self-start text-[0.75rem] font-bold px-2.5 py-1 bg-[var(--accent-light)] text-[var(--accent)] rounded-[8px] mb-5 uppercase print:border print:border-gray-300">3학년</span>
-                <h3 className="roadmap-title font-serif text-[1.1rem] font-semibold text-[var(--text-primary)] mb-3 leading-[1.4] print:text-[11pt]">대학 진학 연계 및 포트폴리오 집대성</h3>
-                <p className="roadmap-text text-[0.88rem] text-[var(--text-secondary)] leading-[1.6]">
-                  지난 2년 동안의 연구 자료와 탐구 기록을 하나로 연결하여 자신의 전공적합성(국제정치학/사회학)을 증명하는 소규모 아카이브를 구축합니다. 수시 전형을 고려하여 학생부 종합 전형을 종합적으로 준비합니다.
-                </p>
-              </div>
-
-              <div className="roadmap-card card highlight-card bg-[var(--bg-card)] border border-[var(--accent)] rounded-[16px] p-8 shadow-[var(--shadow-sm)] flex flex-col h-full bg-linear-to-br bg-gradient-to-br from-[var(--bg-card)] to-[var(--accent-light)] print:border-[#999] print:shadow-none print:bg-[#f7f7f7]">
-                <span className="roadmap-badge self-start text-[0.75rem] font-bold px-2.5 py-1 bg-[var(--accent)] text-white rounded-[8px] mb-5 uppercase">최종 목표</span>
-                <h3 className="roadmap-title font-serif text-[1.1rem] font-semibold text-[var(--text-primary)] mb-3 leading-[1.4] print:text-[11pt]">국제기구 사회 과학 연구원</h3>
-                <p className="roadmap-text text-[0.88rem] text-[var(--text-secondary)] leading-[1.6]">
-                  외교와 국제 정치 분야의 학문적 조예를 쌓은 후, 유엔(UN) 산하 기구나 글로벌 싱크탱크에서 문화 다양성과 국제 인권, 디지털 격차 해소를 연구하고 정책을 기획하는 전문 연구자로 성장하고 싶습니다.
-                </p>
-              </div>
+              {roadmapSteps.map((step) => (
+                <div 
+                  key={step.id}
+                  className={`roadmap-card card border rounded-[16px] p-8 shadow-[var(--shadow-sm)] flex flex-col h-full print:border-[#999] print:shadow-none ${
+                    step.gradeBadge === "최종 목표" 
+                      ? "highlight-card border-[var(--accent)] bg-gradient-to-br from-[var(--bg-card)] to-[var(--accent-light)] print:bg-[#f7f7f7]" 
+                      : "border-[var(--border-color)] bg-[var(--bg-card)] print:bg-white"
+                  }`}
+                >
+                  <span className={`roadmap-badge self-start text-[0.75rem] font-bold px-2.5 py-1 rounded-[8px] mb-5 uppercase print:border print:border-gray-300 ${
+                    step.gradeBadge === "최종 목표" ? "bg-[var(--accent)] text-white" : "bg-[var(--accent-light)] text-[var(--accent)]"
+                  }`}>
+                    {step.gradeBadge}
+                  </span>
+                  <h3 className="roadmap-title font-serif text-[1.1rem] font-semibold text-[var(--text-primary)] mb-3 leading-[1.4] print:text-[11pt]">{step.title}</h3>
+                  <p className="roadmap-text text-[0.88rem] text-[var(--text-secondary)] leading-[1.6]">
+                    {step.text}
+                  </p>
+                </div>
+              ))}
             </div>
 
             <h3 className="subsection-title font-serif text-[1.4rem] font-semibold text-[var(--text-primary)] my-12 border-l-4 border-[var(--accent)] pl-3 print:text-[16pt] print:border-l-6 print:border-black">면접 대비 예상 질문 및 핵심 답변</h3>
@@ -578,7 +530,7 @@ export default function PortfolioPage() {
             
             {/* 면접 플립 카드 컴포넌트 */}
             <div className="print:block">
-              <InterviewCards />
+              <InterviewCards qnAs={interviewQnAs} />
             </div>
           </section>
 
@@ -590,6 +542,15 @@ export default function PortfolioPage() {
         isOpen={isModalOpen}
         onClose={closeModal}
         data={selectedResearch}
+      />
+
+      {/* 내 정보 직접 수정 모달 */}
+      <PortfolioEditorModal
+        isOpen={isEditorOpen}
+        onClose={() => setIsEditorOpen(false)}
+        initialData={portfolioData}
+        onSave={handleSavePortfolio}
+        onReset={handleResetPortfolio}
       />
     </>
   );

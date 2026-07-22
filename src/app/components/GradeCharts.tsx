@@ -14,6 +14,7 @@ import {
   Legend,
   ChartOptions
 } from "chart.js";
+import { AcademicGrade } from "../types/portfolio";
 
 // Chart.js 필수 구성 요소 등록
 ChartJS.register(
@@ -29,20 +30,30 @@ ChartJS.register(
 
 interface GradeChartsProps {
   isDarkMode: boolean;
+  academicGrades: AcademicGrade[];
+  competencyRadar: {
+    labels: string[];
+    scores: number[];
+  };
 }
 
-export default function GradeCharts({ isDarkMode }: GradeChartsProps) {
+export default function GradeCharts({ isDarkMode, academicGrades, competencyRadar }: GradeChartsProps) {
   // 테마별 색상 설정
   const textColor = isDarkMode ? "#e6e8f2" : "#2d3142";
   const gridColor = isDarkMode ? "#262733" : "#e6e8f2";
 
   // 1. 라인 차트 설정 (주요 과목 점수 추이)
+  const labels = academicGrades.map(g => g.term);
+  const englishScores = academicGrades.map(g => g.englishScore);
+  const koreanScores = academicGrades.map(g => g.koreanScore);
+  const socialScores = academicGrades.map(g => g.socialScore);
+
   const lineData = {
-    labels: ["2학년 1학기", "2학년 2학기", "3학년 1학기"],
+    labels: labels.length ? labels : ["2-1", "2-2", "3-1"],
     datasets: [
       {
         label: "영어",
-        data: [96, 98, 100],
+        data: englishScores.length ? englishScores : [96, 98, 100],
         borderColor: "#8a84e2",
         backgroundColor: "rgba(138, 132, 226, 0.1)",
         tension: 0.3,
@@ -50,7 +61,7 @@ export default function GradeCharts({ isDarkMode }: GradeChartsProps) {
       },
       {
         label: "국어",
-        data: [92, 95, 98],
+        data: koreanScores.length ? koreanScores : [92, 95, 98],
         borderColor: "#5ce4c3",
         backgroundColor: "rgba(92, 228, 195, 0.1)",
         tension: 0.3,
@@ -58,7 +69,7 @@ export default function GradeCharts({ isDarkMode }: GradeChartsProps) {
       },
       {
         label: "역사/사회",
-        data: [94, 94, 97],
+        data: socialScores.length ? socialScores : [94, 94, 97],
         borderColor: "#ffaa60",
         backgroundColor: "rgba(255, 170, 96, 0.1)",
         tension: 0.3,
@@ -88,7 +99,7 @@ export default function GradeCharts({ isDarkMode }: GradeChartsProps) {
         }
       },
       y: {
-        min: 80,
+        min: 60,
         max: 100,
         grid: { color: gridColor },
         ticks: { 
@@ -101,10 +112,10 @@ export default function GradeCharts({ isDarkMode }: GradeChartsProps) {
 
   // 2. 레이더 차트 설정 (핵심 역량 분석)
   const radarData = {
-    labels: ["어학독해", "문학소양", "비판독해", "언어소통", "논리토론", "사회분석"],
+    labels: competencyRadar?.labels?.length ? competencyRadar.labels : ["어학독해", "문학소양", "비판독해", "언어소통", "논리토론", "사회분석"],
     datasets: [{
       label: "내 역량 지수",
-      data: [95, 88, 92, 90, 94, 86],
+      data: competencyRadar?.scores?.length ? competencyRadar.scores : [95, 88, 92, 90, 94, 86],
       backgroundColor: "rgba(138, 132, 226, 0.2)",
       borderColor: "#8a84e2",
       pointBackgroundColor: "#8a84e2",
@@ -131,7 +142,7 @@ export default function GradeCharts({ isDarkMode }: GradeChartsProps) {
           font: { 
             family: "'Pretendard', sans-serif",
             size: 11, 
-            weight: 600 
+            weight: 600
           }
         },
         ticks: {
